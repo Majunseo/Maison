@@ -75,7 +75,7 @@ GET /gt.json     정답지. 레지스트리에서 생성되므로 코드와 어�
 ```
 
 기본값이 "꺼짐"인 이유는 환경변수를 깜빡해도 멀쩡한 사이트가 뜨게 하기
-위해서입니다. 버그를 추가하는 방법은 [docs/bugs/README.md](docs/bugs/README.md)
+위해서입니다. 버그를 추가하는 방법은 [docs/bugs.md](docs/bugs.md)
 를 보세요.
 
 ### API 응답 지연
