@@ -25,10 +25,13 @@ npm run dev          # http://localhost:8080
 화면과 API 가 같은 포트에서 돕니다. 별도 서버를 띄울 필요가 없습니다.
 
 ```sh
-npm run build        # 프로덕션 빌드
-npm run preview      # 빌드 결과를 API 와 함께 확인
+npm run build        # 프로덕션 빌드 → dist/
+npm run preview      # 빌드 결과 확인 → http://localhost:4173 (API 도 같이 돈다)
 npm test             # vitest
 ```
+
+`preview` 는 `dev` 와 포트가 다릅니다(4173). 빌드된 결과물로 도는 것이라
+코드를 고쳐도 반영되지 않습니다. 다시 `build` 해야 합니다.
 
 ### 데모 계정
 
