@@ -141,6 +141,8 @@ GET    /api/orders/:id
 GET    /api/pages | /api/pages/:slug
 POST   /api/subscribe
 
+GET    /api/bugs                  켜진 버그 ID 목록
+GET    /gt.json                   정답지
 GET    /api/health
 POST   /_reset
 ```
@@ -151,23 +153,31 @@ POST   /_reset
 
 | 성질 | 현재 |
 |---|---|
-| 폼 제출 경로 | 8개 |
-| AJAX 엔드포인트 | 21개 |
+| 폼 제출 경로 | 9개 (아래) |
+| AJAX 엔드포인트 | 23개 |
 | URL 이 안 바뀌는 상태 변화 | 검색 모달 · 계정 드롭다운 · FAQ 아코디언 |
 | 인증 축 | 로그인 / 비로그인 두 패스 |
 | 근사 중복 | `/info/*` 6개 — 레이아웃 동일, 내용만 다름 |
 | 폼 제출 없이는 못 가는 영역 | `/order/:id` |
 
-## 안내 페이지 출처
+### 폼 제출 경로
 
-`server/pages.ts` 의 배송·반품·관리·FAQ 내용은 실제 홈웨어 브랜드의 고객센터 구성을 참고해 작성했습니다. 문장을 옮기지 않고 구성과 정책 수치만 가져왔습니다.
+크롤러가 폼을 채워야 도달하는 지점들입니다. AJAX 전환 전에는 `/checkout`
+하나뿐이었습니다.
 
-- 소재별 관리법 구성 — Officina General Store, Care Guide
-- FAQ 분류 — The Citizenry, Help
-- 파손 신고 72시간 · 환불 5~7영업일 — Schoolhouse
-- 반품 기한·조건 서술 — HomeGoods
+| 위치 | 폼 | 제출 대상 |
+|---|---|---|
+| `/checkout` | 주문 요청 (8필드) | `POST /api/orders` |
+| `/login` | 로그인 | `POST /api/auth/login` |
+| `/signup` | 회원가입 | `POST /api/auth/signup` |
+| `/forgot-password` | 재설정 요청 | `POST /api/auth/forgot` |
+| `/reset-password` | 새 비밀번호 | `POST /api/auth/reset` |
+| `/account` | 이름 변경 | `PATCH /api/auth/me` |
+| `/account` | 비밀번호 변경 | `POST /api/auth/password` |
+| 헤더 검색 모달 (전 화면) | 검색어 | `/products?q=` 로 이동 |
+| 푸터 (전 화면) | 뉴스레터 | `POST /api/subscribe` |
 
-수치는 사이트가 화면에 내걸고 있는 값과 맞췄습니다. 무료배송 $500 이상, 반품 14일, 문의 `hello@maison.com`.
+마지막 둘은 모든 화면에 있어서, 어느 상태에서든 입력칸이 잡힙니다.
 
 ## 결함 현황
 
