@@ -1,8 +1,35 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { collections } from "@/data/products";
+import { api, ApiError } from "@/lib/api";
 
 export const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  // onSubmit 이 없으면 브라우저 기본 동작으로 페이지가 통째로 새로고침된다.
+  // 푸터는 모든 화면에 있어서 영향 범위가 넓다.
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (state === "sending") return;
+    setState("sending");
+    try {
+      await api.post<{ ok: boolean }>("/api/subscribe", { email });
+      setState("done");
+      setMessage("구독 신청이 접수되었습니다.");
+      setEmail("");
+    } catch (err) {
+      setState("error");
+      setMessage(
+        err instanceof ApiError && err.code === "invalid_email"
+          ? "이메일 형식을 확인해 주세요."
+          : "신청하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    }
+  };
+
   return (
     <footer className="bg-foreground text-background">
       {/* Top bar */}
@@ -26,19 +53,46 @@ export const Footer = () => {
               <p className="text-[10px] font-semibold tracking-[0.3em] uppercase text-background/40 mb-3">
                 Stay Connected
               </p>
-              <form className="flex gap-0">
+              <form onSubmit={handleSubscribe} className="flex gap-0">
+                <label htmlFor="newsletter-email" className="sr-only">
+                  이메일 주소
+                </label>
                 <input
+                  id="newsletter-email"
+                  name="email"
                   type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (state !== "idle") setState("idle");
+                  }}
                   placeholder="Your email"
                   className="flex-1 h-12 px-4 text-sm bg-background/5 border border-background/15 text-background placeholder:text-background/30 focus:outline-none focus:border-background/40 transition-colors"
                 />
                 <button
                   type="submit"
-                  className="h-12 px-5 text-sm font-medium bg-background text-foreground hover:bg-background/90 transition-colors"
+                  disabled={state === "sending"}
+                  aria-label="뉴스레터 구독 신청"
+                  className="h-12 px-5 text-sm font-medium bg-background text-foreground hover:bg-background/90 transition-colors disabled:opacity-60"
                 >
-                  <ArrowRight className="w-4 h-4" />
+                  {state === "done" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4" />
+                  )}
                 </button>
               </form>
+              {message && (
+                <p
+                  role={state === "error" ? "alert" : "status"}
+                  className={`mt-3 text-xs ${
+                    state === "error" ? "text-destructive" : "text-background/60"
+                  }`}
+                >
+                  {message}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -106,28 +160,37 @@ export const Footer = () => {
             </h4>
             <ul className="space-y-3">
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/info/shipping-returns"
                   className="text-sm text-background/60 hover:text-background transition-colors duration-300"
                 >
                   Shipping & Returns
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/info/care-guide"
                   className="text-sm text-background/60 hover:text-background transition-colors duration-300"
                 >
                   Care Guide
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/info/faq"
                   className="text-sm text-background/60 hover:text-background transition-colors duration-300"
                 >
                   FAQ
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/info"
+                  className="inline-flex items-center gap-2 text-sm text-background/60 hover:text-background transition-colors duration-300"
+                >
+                  View All
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </li>
             </ul>
           </div>
@@ -163,24 +226,24 @@ export const Footer = () => {
             © {new Date().getFullYear()} Maison. All rights reserved.
           </p>
           <div className="flex gap-8">
-            <a
-              href="#"
-              className="text-xs text-background/30 hover:text-background/60 transition-colors duration-300"
-            >
-              Privacy Policy
-            </a>
-            <a
-              href="#"
-              className="text-xs text-background/30 hover:text-background/60 transition-colors duration-300"
-            >
-              Terms of Service
-            </a>
-            <a
-              href="#"
-              className="text-xs text-background/30 hover:text-background/60 transition-colors duration-300"
-            >
-              Cookie Policy
-            </a>
+            <Link
+                  to="/info/privacy"
+                  className="text-xs text-background/30 hover:text-background/60 transition-colors duration-300"
+                >
+                  Privacy Policy
+                </Link>
+            <Link
+                  to="/info/terms"
+                  className="text-xs text-background/30 hover:text-background/60 transition-colors duration-300"
+                >
+                  Terms of Service
+                </Link>
+            <Link
+                  to="/info/cookies"
+                  className="text-xs text-background/30 hover:text-background/60 transition-colors duration-300"
+                >
+                  Cookie Policy
+                </Link>
           </div>
         </div>
       </div>

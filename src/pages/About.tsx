@@ -4,8 +4,10 @@ import { useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { useTitle } from "@/hooks/useTitle";
 
 const About = () => {
+  useTitle("소개");
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,

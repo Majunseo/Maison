@@ -5,12 +5,24 @@ import { useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { CollectionCard } from "@/components/CollectionCard";
-import { collections, getNewProducts, products } from "@/data/products";
+import { collections } from "@/data/products";
 import { Button } from "@/components/ui/button";
+import { useTitle } from "@/hooks/useTitle";
+import { useProducts } from "@/hooks/useProducts";
+import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { ErrorState } from "@/components/ErrorState";
 
 const Index = () => {
-  const newProducts = getNewProducts();
-  const latestProducts = products.slice(0, 4);
+  useTitle();
+  // 첫 화면에 보여줄 4개만 받는다. 전체 목록을 내려받을 이유가 없다.
+  const {
+    data: latest,
+    isPending: latestPending,
+    isError: latestFailed,
+    error: latestError,
+    refetch: refetchLatest,
+  } = useProducts({ limit: 4 });
+  const latestProducts = latest?.items ?? [];
   const displayedCollections = collections.slice(0, 6);
   const featuredCollection = collections[0]; // Lighting
   const heroRef = useRef<HTMLDivElement>(null);
@@ -180,11 +192,20 @@ const Index = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
-            {latestProducts.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
-            ))}
-          </div>
+          {latestPending ? (
+            <ProductGridSkeleton
+              count={4}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10"
+            />
+          ) : latestFailed ? (
+            <ErrorState error={latestError} onRetry={() => refetchLatest()} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+              {latestProducts.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} />
+              ))}
+            </div>
+          )}
 
           <div className="mt-14 text-center md:hidden">
             <Button

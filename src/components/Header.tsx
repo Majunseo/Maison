@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "@/hooks/useWishlist";
 import { CartIcon } from "@/components/CartIcon";
+import { AccountMenu } from "@/components/AccountMenu";
+import { SearchDialog } from "@/components/SearchDialog";
 import { collections } from "@/data/products";
 import {
   NavigationMenu,
@@ -104,10 +106,20 @@ export const Header = () => {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2">
+            {/* Search */}
+            <SearchDialog />
+
+            {/* Account Menu */}
+            <AccountMenu />
+
             {/* Wishlist Icon with Tooltip */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <button className="relative p-2 hover:bg-accent transition-colors duration-300 group">
+                <Link
+                  to="/wishlist"
+                  aria-label="위시리스트"
+                  className="relative p-2 hover:bg-accent transition-colors duration-300 group"
+                >
                   <Heart className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
                   <AnimatePresence>
                     {items.length > 0 && (
@@ -121,7 +133,7 @@ export const Header = () => {
                       </motion.span>
                     )}
                   </AnimatePresence>
-                </button>
+                </Link>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs">
                 {items.length === 0 ? (
@@ -215,7 +227,9 @@ export const Header = () => {
                   {[
                     { to: "/products", label: "Shop All" },
                     { to: "/about", label: "About" },
+                    { to: "/wishlist", label: "Wishlist" },
                     { to: "/cart", label: "Shopping Bag" },
+                    { to: "/orders", label: "Orders" },
                   ].map((link, i) => (
                     <motion.div
                       key={link.to}

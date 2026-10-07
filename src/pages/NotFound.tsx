@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { useTitle } from "@/hooks/useTitle";
 
 const NotFound = () => {
+  useTitle("페이지를 찾을 수 없습니다");
   return (
     <Layout>
       <section className="py-20 md:py-28">

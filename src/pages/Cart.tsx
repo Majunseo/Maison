@@ -5,8 +5,10 @@ import { Layout } from "@/components/Layout";
 import { QuantitySelector } from "@/components/QuantitySelector";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
+import { useTitle } from "@/hooks/useTitle";
 
 const Cart = () => {
+  useTitle("장바구니");
   const { items, updateQuantity, removeItem, getSubtotal } = useCart();
   const subtotal = getSubtotal();
   const shipping = subtotal > 500 ? 0 : 25;

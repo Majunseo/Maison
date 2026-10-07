@@ -1,25 +1,93 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ChevronLeft, ChevronRight, ArrowRight, ShoppingBag } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
 import { QuantitySelector } from "@/components/QuantitySelector";
-import { getProductBySlug, getRelatedProducts, collections } from "@/data/products";
+import { collections } from "@/data/products";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useTitle } from "@/hooks/useTitle";
+import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
+import { ApiError } from "@/lib/api";
+import { ErrorState } from "@/components/ErrorState";
+import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const product = getProductBySlug(slug || "");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   const { addItem: addToCart } = useCart();
   const { toast } = useToast();
+
+  // 상세와 연관 상품은 별개 요청이다. 한쪽만 실패할 수 있다.
+  const { data: product, isPending, isError, error, refetch } = useProduct(slug);
+  const {
+    data: related,
+    isPending: relatedPending,
+    isError: relatedError,
+  } = useRelatedProducts(slug);
+
+  // 라우터는 slug 만 바뀔 때 이 컴포넌트를 다시 만들지 않는다.
+  // 직접 되돌리지 않으면 이전 상품의 이미지 인덱스가 남는다.
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setQuantity(1);
+  }, [slug]);
+
+  useTitle(
+    isPending ? "불러오는 중" : product ? product.name : "상품을 찾을 수 없습니다"
+  );
+
+  if (isPending) {
+    return (
+      <Layout>
+        <div
+          className="container-full py-10 md:py-16"
+          role="status"
+          aria-busy="true"
+          aria-label="상품을 불러오는 중"
+        >
+          <span className="sr-only">상품 정보를 불러오는 중입니다</span>
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-20">
+            <div className="lg:col-span-7">
+              <Skeleton className="aspect-[4/5] w-full rounded-none" />
+            </div>
+            <div className="lg:col-span-5 space-y-5">
+              <Skeleton className="h-3 w-24 rounded-none" />
+              <Skeleton className="h-12 w-3/4 rounded-none" />
+              <Skeleton className="h-8 w-28 rounded-none" />
+              <Skeleton className="h-24 w-full rounded-none" />
+              <Skeleton className="h-14 w-full rounded-none" />
+              <Skeleton className="h-14 w-full rounded-none" />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const notFound = error instanceof ApiError && error.status === 404;
+
+  if (isError && !notFound) {
+    return (
+      <Layout>
+        <div className="container-wide">
+          <ErrorState
+            error={error}
+            onRetry={() => refetch()}
+            title="상품을 불러오지 못했습니다"
+          />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!product) {
     return (
@@ -38,7 +106,7 @@ const ProductDetail = () => {
   }
 
   const inWishlist = isInWishlist(product.id);
-  const relatedProducts = getRelatedProducts(product.id);
+  const relatedProducts = related?.items ?? [];
   const collection = collections.find((c) => c.id === product.collection);
 
   const handleWishlistToggle = () => {
@@ -304,7 +372,7 @@ const ProductDetail = () => {
       </section>
 
       {/* Related Products */}
-      {relatedProducts.length > 0 && (
+      {(relatedPending || relatedError || relatedProducts.length > 0) && (
         <section className="py-20 md:py-28 bg-linen">
           <div className="container-full">
             <div className="flex items-end justify-between mb-12">
@@ -324,15 +392,27 @@ const ProductDetail = () => {
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
-              {relatedProducts.map((product, index) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  index={index}
-                />
-              ))}
-            </div>
+            {relatedPending ? (
+              <ProductGridSkeleton
+                count={4}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10"
+              />
+            ) : relatedError ? (
+              /* 보조 영역이라 페이지 전체를 막지는 않지만, 실패를 숨기지도 않는다. */
+              <p role="alert" className="text-sm text-muted-foreground">
+                연관 상품을 불러오지 못했습니다.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+                {relatedProducts.map((product, index) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    index={index}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}

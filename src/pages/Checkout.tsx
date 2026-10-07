@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useTitle } from "@/hooks/useTitle";
+import { api, ApiError } from "@/lib/api";
 
 const Checkout = () => {
+  useTitle("결제");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { items, getSubtotal, clearCart } = useCart();
@@ -68,20 +71,48 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;          // 중복 제출 방어
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const order = await api.post<{ orderId: string; total: number }>(
+        "/api/orders",
+        {
+          items: items.map((item) => ({
+            productId: item.product.id,
+            quantity: item.quantity,
+          })),
+          customer: formData,
+        }
+      );
 
-    toast({
-      title: "Order Request Submitted",
-      description:
-        "Thank you! We'll contact you shortly to complete your order.",
-    });
+      // 성공 응답을 확인한 뒤에만 장바구니를 비우고 성공을 알린다.
+      clearCart();
+      toast({
+        title: "Order Request Submitted",
+        description: `주문번호 ${order.orderId} — 확인 후 연락드리겠습니다.`,
+      });
+      // 주문번호가 URL 에 남아야 새로고침·북마크로 다시 볼 수 있다.
+      navigate(`/order/${order.orderId}`);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.status === 0
+            ? "서버에 연결할 수 없습니다. 다시 시도해 주세요."
+            : err.code === "missing_fields"
+              ? "필수 항목이 비어 있습니다."
+              : `주문을 접수하지 못했습니다 (${err.status}).`
+          : "주문을 접수하지 못했습니다.";
 
-    clearCart();
-    setIsSubmitting(false);
-    navigate("/");
+      // 실패했으면 장바구니를 유지한다. 비우면 복구할 방법이 없다.
+      toast({
+        title: "주문 접수 실패",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

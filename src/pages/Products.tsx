@@ -1,10 +1,9 @@
-import { useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, X } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ProductCard } from "@/components/ProductCard";
-import { products, collections, getCollectionBySlug } from "@/data/products";
+import { collections, getCollectionBySlug } from "@/data/products";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -14,8 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-type SortOption = "featured" | "newest" | "price-asc" | "price-desc" | "name-asc";
+import { useTitle } from "@/hooks/useTitle";
+import { useProducts, type SortOption } from "@/hooks/useProducts";
+import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
+import { ErrorState } from "@/components/ErrorState";
 
 const sortOptions: { value: SortOption; label: string }[] = [
   { value: "featured", label: "Featured" },
@@ -29,40 +30,31 @@ const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCollection = searchParams.get("collection") || "all";
   const activeSort = (searchParams.get("sort") as SortOption) || "featured";
+  const activeQuery = searchParams.get("q") ?? "";
 
-  const filteredAndSortedProducts = useMemo(() => {
-    let result = [...products];
+  useTitle(
+    activeQuery
+      ? `"${activeQuery}" 검색 결과`
+      : activeCollection === "all"
+        ? "상품"
+        : collections.find((c) => c.slug === activeCollection)?.name ?? "상품"
+  );
 
-    // Filter by collection
-    if (activeCollection !== "all") {
-      const collection = collections.find((c) => c.slug === activeCollection);
-      if (collection) {
-        result = result.filter((product) => product.collection === collection.id);
-      }
-    }
+  // 필터·정렬을 서버에 맡긴다. 쿼리가 바뀌면 새 요청이 나간다.
+  const {
+    data,
+    isPending,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useProducts({
+    collection: activeCollection,
+    sort: activeSort,
+    q: activeQuery,
+  });
 
-    // Sort
-    switch (activeSort) {
-      case "newest":
-        result = result.filter((p) => p.new).concat(result.filter((p) => !p.new));
-        break;
-      case "price-asc":
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case "name-asc":
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "featured":
-      default:
-        result = result.filter((p) => p.featured).concat(result.filter((p) => !p.featured));
-        break;
-    }
-
-    return result;
-  }, [activeCollection, activeSort]);
+  const productList = data?.items ?? [];
 
   const currentCollection = activeCollection !== "all"
     ? getCollectionBySlug(activeCollection)
@@ -75,6 +67,12 @@ const Products = () => {
     } else {
       newParams.set("collection", slug);
     }
+    setSearchParams(newParams);
+  };
+
+  const handleClearSearch = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("q");
     setSearchParams(newParams);
   };
 
@@ -111,10 +109,14 @@ const Products = () => {
             transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] as const }}
           >
             <p className="text-[10px] font-semibold tracking-[0.3em] uppercase text-white/50 mb-3">
-              {currentCollection ? "Collection" : "Shop"}
+              {activeQuery ? "Search" : currentCollection ? "Collection" : "Shop"}
             </p>
             <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl text-white mb-3 leading-[0.95]">
-              {currentCollection ? currentCollection.name : "All Pieces"}
+              {activeQuery
+                ? `"${activeQuery}"`
+                : currentCollection
+                  ? currentCollection.name
+                  : "All Pieces"}
             </h1>
             {currentCollection && (
               <p className="text-base text-white/70 max-w-lg">
@@ -128,6 +130,22 @@ const Products = () => {
       {/* Filters & Sorting */}
       <section className="py-5 border-b border-border sticky top-16 md:top-20 bg-background/95 backdrop-blur-md z-40">
         <div className="container-full">
+          {/* 검색 중임을 드러내고, 해제할 수단을 같은 자리에 둔다. */}
+          {activeQuery && (
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-xs tracking-[0.1em] uppercase text-muted-foreground">
+                Searching
+              </span>
+              <button
+                onClick={handleClearSearch}
+                className="group inline-flex items-center gap-2 px-4 py-1.5 text-xs tracking-[0.05em] border border-border hover:border-foreground/40 transition-colors duration-300"
+              >
+                {activeQuery}
+                <X className="w-3.5 h-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Collection Filters */}
             <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 -mb-2 md:mb-0 scrollbar-hide">
@@ -191,16 +209,35 @@ const Products = () => {
       {/* Products Grid */}
       <section className="py-14 md:py-20">
         <div className="container-full">
-          {filteredAndSortedProducts.length > 0 ? (
+          {isPending ? (
+            <ProductGridSkeleton count={8} />
+          ) : isError ? (
+            <ErrorState error={error} onRetry={() => refetch()} />
+          ) : productList.length > 0 ? (
             <>
               <div className="flex items-center justify-between mb-10">
-                <p className="text-sm text-muted-foreground">
-                  {filteredAndSortedProducts.length}{" "}
-                  {filteredAndSortedProducts.length === 1 ? "piece" : "pieces"}
+                <p className="text-sm text-muted-foreground" aria-live="polite">
+                  {productList.length}{" "}
+                  {productList.length === 1 ? "piece" : "pieces"}
                 </p>
+                {/* 필터를 바꿔 다시 받아오는 중. 목록은 이전 값이 남아 있다. */}
+                {isFetching && (
+                  <p
+                    role="status"
+                    aria-busy="true"
+                    className="text-xs tracking-[0.1em] uppercase text-muted-foreground"
+                  >
+                    Updating
+                  </p>
+                )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-10">
-                {filteredAndSortedProducts.map((product, index) => (
+              <div
+                className={cn(
+                  "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-10 transition-opacity duration-300",
+                  isFetching && "opacity-50"
+                )}
+              >
+                {productList.map((product, index) => (
                   <ProductCard
                     key={product.id}
                     product={product}
@@ -215,7 +252,9 @@ const Products = () => {
                 No pieces found
               </p>
               <p className="text-muted-foreground mb-8">
-                This collection is currently being curated.
+                {activeQuery
+                  ? `"${activeQuery}" 와 맞는 상품이 없습니다. 다른 낱말로 찾아보세요.`
+                  : "This collection is currently being curated."}
               </p>
               <Button
                 asChild
