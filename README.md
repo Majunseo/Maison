@@ -47,6 +47,34 @@ curl -X POST http://localhost:8080/_reset
 
 계정·주문을 시드 상태로 되돌립니다. 계정과 주문은 **메모리에만** 있습니다. 영속 저장을 쓰면 실행을 반복할수록 주문이 쌓여 `/orders` 화면이 매번 달라지고, 같은 상태가 새 상태로 잡혀 재현성이 깨지기 때문입니다.
 
+### 버그 토글
+
+결함은 코드에 박아두지 않고 환경변수로 켜고 끕니다. 정상 사이트와 버그
+사이트가 같은 코드에서 나와야, 두 버전의 차이가 주입한 결함뿐이라고 말할
+수 있습니다.
+
+```sh
+npm run dev                     # 정상 사이트 (기본값)
+BUGS_ON=all npm run dev         # 버그 전부 켬
+BUG_F1=1 BUG_U2=1 npm run dev   # 지정한 것만
+```
+
+두 벌을 동시에 띄워 비교할 수 있습니다.
+
+```sh
+npm run dev -- --port 8080                 # 정상
+BUGS_ON=all npm run dev -- --port 8081     # 버그
+```
+
+```
+GET /api/bugs    지금 켜진 ID 목록
+GET /gt.json     정답지. 레지스트리에서 생성되므로 코드와 어긋나지 않음
+```
+
+기본값이 "꺼짐"인 이유는 환경변수를 깜빡해도 멀쩡한 사이트가 뜨게 하기
+위해서입니다. 버그를 추가하는 방법은 [docs/bugs/README.md](docs/bugs/README.md)
+를 보세요.
+
 ### API 응답 지연
 
 ```sh
@@ -140,6 +168,18 @@ POST   /_reset
 - 반품 기한·조건 서술 — HomeGoods
 
 수치는 사이트가 화면에 내걸고 있는 값과 맞췄습니다. 무료배송 $500 이상, 반품 14일, 문의 `hello@maison.com`.
+
+## 결함 현황
+
+현재 **0건**입니다. 이 상태가 측정의 기준선입니다. 레지스트리는
+`server/bugs/` 에 분야별로 나뉘어 있고 전부 비어 있습니다.
+
+| 접두사 | 분야 | 파일 |
+|---|---|---|
+| `F` | 기능적 | `server/bugs/functional.ts` |
+| `V` | 입력 검증 | `server/bugs/validation.ts` |
+| `N` | 이동·라우팅 | `server/bugs/routing.ts` |
+| `U` | UI | `server/bugs/ui.ts` + `src/styles/bugs-ui.css` |
 
 ## 아직 없는 것
 

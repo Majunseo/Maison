@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { products, collections, type Product } from "./data";
 import { findInfoPage, listInfoPages } from "./pages";
+import { enabledIds, groundTruth } from "./bugs";
 import {
   consumeResetToken,
   createOrder,
@@ -154,7 +155,8 @@ export async function handleApi(
   const url = new URL(req.url ?? "/", "http://localhost");
   const path = url.pathname;
 
-  if (!path.startsWith("/api/") && path !== "/_reset") return false;
+  if (!path.startsWith("/api/") && path !== "/_reset" && path !== "/gt.json")
+    return false;
 
   // POST /_reset — 시드 상태로 복원. 벤치마크가 매 실행 전에 부른다.
   if (path === "/_reset") {
@@ -163,7 +165,21 @@ export async function handleApi(
     return true;
   }
 
+  // GET /gt.json — 정답지. 벤치마크가 측정 전에 읽는다.
+  // 지연을 주지 않는다. 측정 대상이 아니라 측정 조건이다.
+  if (path === "/gt.json") {
+    json(res, 200, groundTruth());
+    return true;
+  }
+
   await sleep(DELAY_MS);
+
+  // GET /api/bugs — 지금 켜진 버그. 화면이 토글을 읽는 유일한 통로다.
+  // 환경변수는 서버에만 있고 브라우저에는 없기 때문에 거쳐야 한다.
+  if (path === "/api/bugs" && req.method === "GET") {
+    json(res, 200, { enabled: enabledIds() });
+    return true;
+  }
 
   // GET /api/health
   if (path === "/api/health") {

@@ -1,9 +1,12 @@
+import "@/styles/bugs-ui.css";
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useBugBodyAttribute } from "@/hooks/useBugs";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -34,8 +37,16 @@ const queryClient = new QueryClient({
   },
 });
 
+/** 켜진 버그를 <body data-bugs> 로 찍는다. CSS 로 만든 UI 버그가 여기에 걸린다.
+ *  Provider 안쪽이어야 useQuery 를 쓸 수 있어서 컴포넌트로 뺐다. */
+const BugAttribute = () => {
+  useBugBodyAttribute();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <BugAttribute />
     <TooltipProvider>
       <Toaster />
       <Sonner />
