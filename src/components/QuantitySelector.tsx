@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useBug } from "@/hooks/useBugs";
 
 interface QuantitySelectorProps {
   quantity: number;
@@ -17,14 +18,16 @@ export const QuantitySelector = ({
   max = 10,
   className,
 }: QuantitySelectorProps) => {
+  const bugF3 = useBug("F3");   // F3: 눌러도 수량이 바뀌지 않는다
+
   const decrease = () => {
-    if (quantity > min) {
+    if (!bugF3 && quantity > min) {
       onQuantityChange(quantity - 1);
     }
   };
 
   const increase = () => {
-    if (quantity < max) {
+    if (!bugF3 && quantity < max) {
       onQuantityChange(quantity + 1);
     }
   };

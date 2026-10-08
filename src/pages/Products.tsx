@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useTitle } from "@/hooks/useTitle";
+import { useBug } from "@/hooks/useBugs";
 import { useProducts, type SortOption } from "@/hooks/useProducts";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { ErrorState } from "@/components/ErrorState";
@@ -31,6 +32,7 @@ const Products = () => {
   const activeCollection = searchParams.get("collection") || "all";
   const activeSort = (searchParams.get("sort") as SortOption) || "featured";
   const activeQuery = searchParams.get("q") ?? "";
+  const bugF4 = useBug("F4");
 
   useTitle(
     activeQuery
@@ -63,7 +65,8 @@ const Products = () => {
   const handleFilterChange = (slug: string) => {
     const newParams = new URLSearchParams(searchParams);
     if (slug === "all") {
-      newParams.delete("collection");
+      // F4: ALL 을 눌러도 컬렉션 필터가 풀리지 않는다.
+      if (!bugF4) newParams.delete("collection");
     } else {
       newParams.set("collection", slug);
     }
