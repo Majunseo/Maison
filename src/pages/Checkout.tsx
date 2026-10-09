@@ -10,9 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useTitle } from "@/hooks/useTitle";
 import { api, ApiError } from "@/lib/api";
+import { useCheckoutValidationBugs } from "@/bugs/validation/useValidationBugs";
 
 const Checkout = () => {
   useTitle("결제");
+  const validationBugs = useCheckoutValidationBugs();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { items, getSubtotal, clearCart } = useCart();
@@ -214,7 +216,7 @@ const Checkout = () => {
                       <Input
                         id="email"
                         name="email"
-                        type="email"
+                        type={validationBugs.emailType}
                         value={formData.email}
                         onChange={handleInputChange}
                         required
@@ -273,7 +275,7 @@ const Checkout = () => {
                           name="city"
                           value={formData.city}
                           onChange={handleInputChange}
-                          required
+                          required={validationBugs.cityRequired}
                           className="rounded-none h-12"
                         />
                       </div>

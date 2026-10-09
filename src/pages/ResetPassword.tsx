@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useResetPassword, useResetToken } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api";
 import { useTitle } from "@/hooks/useTitle";
+import { useResetValidationBug } from "@/bugs/validation/useValidationBugs";
 
 function describe(error: unknown): string {
   if (error instanceof ApiError) {
@@ -28,6 +29,7 @@ function describe(error: unknown): string {
 
 const ResetPassword = () => {
   useTitle("새 비밀번호 설정");
+  const acceptMismatch = useResetValidationBug();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
@@ -42,7 +44,7 @@ const ResetPassword = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (reset.isPending) return; // 중복 제출 방어
-    if (password !== confirm) {
+    if (!acceptMismatch && password !== confirm) {
       setLocalError("두 비밀번호가 서로 다릅니다.");
       return;
     }
