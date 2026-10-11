@@ -13,11 +13,6 @@ export function useRelatedLinkBug(): boolean {
   return useBug("N1");
 }
 
-/** N2: 없는 상품 주소에서 404 안내 대신 빈 화면을 보여준다. */
-export function useMissingProductBug(): boolean {
-  return useBug("N2");
-}
-
 /** N3: 화면을 옮겨도 스크롤 위치를 맨 위로 되돌리지 않는다. */
 export function useScrollRestoreBug(): boolean {
   return useBug("N3");
