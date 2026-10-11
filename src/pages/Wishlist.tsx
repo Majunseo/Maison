@@ -8,10 +8,12 @@ import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useTitle } from "@/hooks/useTitle";
+import { useBug } from "@/hooks/useBugs";
 
 const Wishlist = () => {
   useTitle("위시리스트");
   const { items, clearWishlist } = useWishlist();
+  const bugF1 = useBug("F1");
   const { addItem: addToCart } = useCart();
   const { toast } = useToast();
 
@@ -119,7 +121,8 @@ const Wishlist = () => {
           {/* Saved pieces — 카탈로그와 같은 카드를 쓴다.
               카드의 하트가 이미 채워진 상태이고, 누르면 목록에서 빠진다. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-10">
-            {items.map((product, index) => (
+            {/* F1: 목록만 마지막 항목을 빠뜨린다. 하트와 카운트는 정상. */}
+            {(bugF1 ? items.slice(0, -1) : items).map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
             ))}
           </div>

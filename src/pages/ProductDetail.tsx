@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useTitle } from "@/hooks/useTitle";
+import { useBug } from "@/hooks/useBugs";
 import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
 import { ApiError } from "@/lib/api";
 import { ErrorState } from "@/components/ErrorState";
@@ -25,6 +26,7 @@ const ProductDetail = () => {
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlist();
   const { addItem: addToCart } = useCart();
   const { toast } = useToast();
+  const bugF2 = useBug("F2");
 
   // 상세와 연관 상품은 별개 요청이다. 한쪽만 실패할 수 있다.
   const { data: product, isPending, isError, error, refetch } = useProduct(slug);
@@ -126,7 +128,8 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    // F2: 담기를 건너뛰고 성공 토스트만 띄운다.
+    if (!bugF2) addToCart(product, quantity);
     toast({
       title: "Added to bag",
       description: `${quantity} × ${product.name} added to your bag.`,
