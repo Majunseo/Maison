@@ -13,11 +13,17 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useTitle } from "@/hooks/useTitle";
 import { useBug } from "@/hooks/useBugs";
+import { useMissingProductBug, useRelatedLinkBug } from "@/bugs/routing/useRoutingBugs";
 import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
 import { ApiError } from "@/lib/api";
 import { ErrorState } from "@/components/ErrorState";
 import { ProductGridSkeleton } from "@/components/ProductGridSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+
+/** N1 이 연관 상품 링크를 보내는 곳. 상품 13개가 고정된 시드 데이터라
+ *  어느 컬렉션에도 속하지 않는 값을 쓰지 않고 실재하는 상품을 지정한다.
+ *  arc-pendant-light(lighting) 의 연관 상품과 다른 컬렉션이어야 한다. */
+const N1_WRONG_TARGET = "harvest-dining-table";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -29,6 +35,9 @@ const ProductDetail = () => {
   const bugF2 = useBug("F2");
 
   // 상세와 연관 상품은 별개 요청이다. 한쪽만 실패할 수 있다.
+  const blankWhenMissing = useMissingProductBug(); // N2
+  const shiftRelatedLinks = useRelatedLinkBug();   // N1
+
   const { data: product, isPending, isError, error, refetch } = useProduct(slug);
   const {
     data: related,
@@ -92,6 +101,11 @@ const ProductDetail = () => {
   }
 
   if (!product) {
+    // N2: 안내를 지우면 HTTP 200 에 빈 화면만 남는다. SPA 라 서버는
+    // 라우트를 모르고 항상 200 을 주므로, 상태코드로는 구분되지 않는다.
+    if (blankWhenMissing) {
+      return <Layout><div className="container-wide py-28" /></Layout>;
+    }
     return (
       <Layout>
         <div className="container-wide py-28 text-center">
@@ -108,7 +122,20 @@ const ProductDetail = () => {
   }
 
   const inWishlist = isInWishlist(product.id);
-  const relatedProducts = related?.items ?? [];
+  const relatedItems = related?.items ?? [];
+  // N1: 보이는 내용은 그대로 두고 링크의 slug 만 바꾼다. 카드에 적힌
+  // 이름과 도착한 페이지의 제목을 맞춰봐야만 드러난다.
+  //
+  // 연관 상품끼리 돌리지 않는 이유: 같은 컬렉션에서 자기를 뺀 것이
+  // 연관 상품인데 컬렉션마다 상품이 최대 2개라 항상 1건이다. 1건짜리
+  // 목록을 회전하면 제자리가 되어 아무 일도 일어나지 않는다.
+  //
+  // 지금 상품을 가리키게 하는 방법도 안 된다. URL 이 같아 라우터가 다시
+  // 그리지 않으므로 "눌러도 반응 없음"으로 보이고, 목적지가 틀린 것과
+  // 구분되지 않는다. 다른 컬렉션의 상품으로 보내야 이동이 실제로 일어난다.
+  const relatedProducts = shiftRelatedLinks
+    ? relatedItems.map((item) => ({ ...item, slug: N1_WRONG_TARGET }))
+    : relatedItems;
   const collection = collections.find((c) => c.id === product.collection);
 
   const handleWishlistToggle = () => {

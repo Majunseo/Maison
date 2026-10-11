@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useLogin, useMe } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api";
 import { useTitle } from "@/hooks/useTitle";
+import { useLoginReturnBug } from "@/bugs/routing/useRoutingBugs";
 
 function describe(error: unknown): string {
   if (error instanceof ApiError) {
@@ -28,7 +29,10 @@ const Login = () => {
 
   const [form, setForm] = useState({ email: "", password: "" });
 
-  const from = (location.state as { from?: string } | null)?.from ?? "/orders";
+  const sendHomeAfterLogin = useLoginReturnBug(); // N4
+  const requested = (location.state as { from?: string } | null)?.from ?? "/orders";
+  // N4: 돌아갈 곳을 무시하고 홈으로 보낸다.
+  const from = sendHomeAfterLogin ? "/" : requested;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
