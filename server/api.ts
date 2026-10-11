@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { products, collections, type Product } from "./data";
 import { findInfoPage, listInfoPages } from "./pages";
 import { enabledIds, groundTruth } from "./bugs";
+import { accountNameForValidation, rejectsSignupPassword } from "./bugs/validation-behavior";
 import {
   consumeResetToken,
   createOrder,
@@ -221,7 +222,7 @@ export async function handleApi(
       json(res, 400, { error: "invalid_email" });
       return true;
     }
-    if (password.length < 8) {
+    if (rejectsSignupPassword(password)) {
       json(res, 400, { error: "weak_password", minLength: 8 });
       return true;
     }
@@ -304,7 +305,7 @@ export async function handleApi(
       json(res, 400, { error: "invalid_json" });
       return true;
     }
-    const name = (payload.name ?? "").trim();
+    const name = accountNameForValidation(payload.name ?? "");
     if (!name) {
       json(res, 400, { error: "missing_fields", fields: ["name"] });
       return true;
