@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useTitle } from "@/hooks/useTitle";
-import { useMissingProductBug, useRelatedLinkBug } from "@/bugs/routing/useRoutingBugs";
+import { useRelatedLinkBug } from "@/bugs/routing/useRoutingBugs";
 import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
 import { ApiError } from "@/lib/api";
 import { ErrorState } from "@/components/ErrorState";
@@ -33,7 +33,6 @@ const ProductDetail = () => {
   const { toast } = useToast();
 
   // 상세와 연관 상품은 별개 요청이다. 한쪽만 실패할 수 있다.
-  const blankWhenMissing = useMissingProductBug(); // N2
   const shiftRelatedLinks = useRelatedLinkBug();   // N1
 
   const { data: product, isPending, isError, error, refetch } = useProduct(slug);
@@ -99,11 +98,6 @@ const ProductDetail = () => {
   }
 
   if (!product) {
-    // N2: 안내를 지우면 HTTP 200 에 빈 화면만 남는다. SPA 라 서버는
-    // 라우트를 모르고 항상 200 을 주므로, 상태코드로는 구분되지 않는다.
-    if (blankWhenMissing) {
-      return <Layout><div className="container-wide py-28" /></Layout>;
-    }
     return (
       <Layout>
         <div className="container-wide py-28 text-center">

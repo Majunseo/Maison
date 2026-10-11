@@ -10,6 +10,14 @@ import type { Bug } from "./types";
  *
  * 토글은 src/bugs/routing/useRoutingBugs.ts 를 거쳐 읽는다. 화면마다
  * useBug("N1") 을 직접 부르면 ID 가 흩어져서 지울 때 빠뜨린다.
+ *
+ * N2 는 비어 있다. 없는 상품 주소에서 빈 화면을 보여주는 결함이었는데,
+ * 사이트 어디에도 그 주소로 가는 링크가 없어 링크를 따라가는 도구는
+ * 영원히 도달하지 못한다. 문서가 정한 라우팅 범위도 "내부 이동"이라
+ * 아무도 링크하지 않는 주소는 범위 밖이다.
+ *
+ * 번호를 당기지 않는다. 앞선 커밋에서 N2 가 그 결함을 가리켰으므로,
+ * 당기면 같은 ID 가 두 가지를 뜻하게 된다.
  */
 export const routingBugs: Bug[] = [
   {
@@ -26,22 +34,6 @@ export const routingBugs: Bug[] = [
     needs: ["ai", "link_target_mismatch"],
   },
   {
-    id: "N2",
-    area: "routing",
-    symptom: "wrong_target",
-    title: "없는 상품 주소가 404 안내 대신 빈 화면",
-    description:
-      "존재하지 않는 상품 주소로 들어가면 'Product Not Found' 안내와 목록으로 돌아가는 버튼이 사라지고 빈 화면만 남는다. 머리글과 바닥글은 그대로라 화면이 깨진 것처럼 보이지도 않는다.",
-    location: "src/pages/ProductDetail.tsx",
-    reproduce:
-      "/product/no-such-product 로 들어간다. 본문이 비어 있고 안내 문구가 없다.",
-    // SPA 라 서버는 라우트를 모르고 항상 200 을 준다. 상태코드만 보는
-    // 검사로는 정상 페이지와 구분되지 않는다. 이 프로젝트의 핵심 논점이라
-    // 정답지에 한 건 넣어 둔다.
-    detectable: false,
-    needs: ["ai", "empty_content"],
-  },
-  {
     id: "N3",
     area: "routing",
     symptom: "wrong_target",
@@ -52,9 +44,10 @@ export const routingBugs: Bug[] = [
     reproduce:
       "/products 를 아래로 충분히 내린 뒤 상품 카드를 누른다. 상세 페이지의 window.scrollY 가 0 이 아니다.",
     // DOM 은 완전히 정상이다. 달라지는 것은 scrollY 숫자뿐이라
-    // 화면을 봐야 드러난다.
-    detectable: false,
-    needs: ["ai", "screenshot"],
+    // 규칙 한 줄로 판정된다 - 다만 scrollY 나 스크린샷을 수집해야 보인다.
+    // "지금 파이프라인이 그걸 수집하는가" 를 재는 자리이기도 하다.
+    detectable: true,
+    needs: ["scroll_position"],
   },
   {
     id: "N4",
